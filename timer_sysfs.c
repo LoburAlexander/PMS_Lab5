@@ -42,7 +42,7 @@ static struct attribute_group timer_attr_group = {
 
 void timer_sysfs_callback(unsigned long data)
 {
-	printk("Hello, world! (%ld)\n", jiffies);
+	printk("Hello, world! (jiffies = %ld)\n", jiffies);
 	mod_timer(&hello_timer, jiffies + msecs_to_jiffies(period));
 }
 
