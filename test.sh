@@ -6,3 +6,4 @@ cat /sys/timer_dir/timer_period
 
 sudo rmmod timer_sysfs
 make clean >> log.txt
+

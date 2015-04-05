@@ -4,8 +4,12 @@
 #include <linux/sysfs.h>
 #include <linux/module.h>
 #include <linux/init.h>
+#include <linux/timer.h>
 
-int period;
+static struct kobject *timer_kobj;
+static struct timer_list hello_timer;
+
+int period = 0;
 
 ssize_t timer_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
@@ -15,6 +19,12 @@ ssize_t timer_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char
 ssize_t timer_sysfs_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	sscanf(buf, "%d", &period);
+
+	if (period == 0)
+		del_timer(&hello_timer);
+	else
+		mod_timer(&hello_timer, jiffies + msecs_to_jiffies(period));
+
 	return count;
 }
 
@@ -29,23 +39,33 @@ static struct attribute_group timer_attr_group = {
 	.attrs = attrs,
 };
 
-static struct kobject *timer_kobj;
+
+void timer_sysfs_callback(unsigned long data)
+{
+	printk("Hello, world! (%ld)\n", jiffies);
+	mod_timer(&hello_timer, jiffies + msecs_to_jiffies(period));
+}
+
 
 
 static int __init timer_sysfs_init(void)
 {
 	int retval;
+
 	timer_kobj = kobject_create_and_add("timer_dir", NULL);
 
 	retval = sysfs_create_group(timer_kobj, &timer_attr_group);
 	if (retval)
 		kobject_put(timer_kobj);
 
+	setup_timer(&hello_timer, timer_sysfs_callback, 0);
+
 	return retval;
 }
 
 static void __exit timer_sysfs_exit(void)
 {
+	del_timer(&hello_timer);
 	kobject_put(timer_kobj);
 }
 
